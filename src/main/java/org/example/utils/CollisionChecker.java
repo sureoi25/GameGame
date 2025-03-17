@@ -48,6 +48,16 @@ public class CollisionChecker {
                 break;
         }
 
+        // Check world boundaries
+        int worldWidth = tileManager.MAX_MAP_COL * tileManager.TILE_SIZE;
+        int worldHeight = tileManager.MAX_MAP_ROW * tileManager.TILE_SIZE;
+
+        // Check if the entity would go out of world bounds
+        if (nextHitboxX < 0 || nextHitboxX + hitboxWidth > worldWidth ||
+                nextHitboxY < 0 || nextHitboxY + hitboxHeight > worldHeight) {
+            return true; // Out of world bounds is considered a collision
+        }
+
         // Check all four corners of the hitbox
         return checkPoint(nextHitboxX, nextHitboxY) || // Top-left
                 checkPoint(nextHitboxX + hitboxWidth, nextHitboxY) || // Top-right
@@ -60,13 +70,13 @@ public class CollisionChecker {
         int tileCol = (int) (x / tileManager.TILE_SIZE);
         int tileRow = (int) (y / tileManager.TILE_SIZE);
 
-        // Check if out of bounds
+        //check out of bounds
         if (tileCol < 0 || tileCol >= tileManager.MAX_MAP_COL ||
                 tileRow < 0 || tileRow >= tileManager.MAX_MAP_ROW) {
-            return true; // Out of bounds is considered a collision
+            return true; //out of bounds collide
         }
 
-        // Check if the tile has collision
+        //check if tile has collision
         return tileManager.tiles[tileManager.mapTileNum[tileRow][tileCol]].collision;
     }
 }

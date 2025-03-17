@@ -24,7 +24,8 @@ public class Player extends Entity {
         loadAnimations();
         this.state = IDLE_DOWN;
         this.aniSpeed = 15;
-        this.direction=2;
+        this.direction = 2;
+        this.setSpeed(4.0f);
     }
 
     @Override
@@ -35,22 +36,31 @@ public class Player extends Entity {
         setAnimation();
     }
 
-    @Override
-    public void render(Graphics g) {
+    // New render method that takes camera position into account
+    public void render(Graphics g, int cameraX, int cameraY) {
         BufferedImage currentFrame = animations[state][aniIndex];
+
+        // Calculate screen position by subtracting camera offset
+        int screenX = (int)x - cameraX;
+        int screenY = (int)y - cameraY;
 
         // Flip the image if facing left and using a side animation
         if (playerDirection == LEFT &&
                 (state == RUNNING_SIDE || state == IDLE_SIDE || state == ATTACK_SIDE)) {
-            g.drawImage(currentFrame, (int)x + width, (int)y, -width, height, null);
+            g.drawImage(currentFrame, screenX + width, screenY, -width, height, null);
         } else {
-            g.drawImage(currentFrame, (int)x, (int)y, width, height, null);
+            g.drawImage(currentFrame, screenX, screenY, width, height, null);
         }
+    }
+
+    // Original render method for backward compatibility
+    @Override
+    public void render(Graphics g) {
+        render(g, 0, 0);
     }
 
     @Override
     protected void updatePosition() {
-
         // Don't attempt to move if attacking
         if (moving && !attacking) {
             oldX = x;
@@ -75,6 +85,7 @@ public class Player extends Entity {
             collisionDetected = false;
         }
     }
+
     public float getOldX() {
         return oldX;
     }

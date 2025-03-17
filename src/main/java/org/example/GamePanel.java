@@ -24,6 +24,14 @@ public class GamePanel extends JPanel {
     private final int PLAYER_WIDTH = 48;
     private final int PLAYER_HEIGHT = 48;
 
+    // World settings
+    public final int WORLD_WIDTH = 40; // 40 tiles wide
+    public final int WORLD_HEIGHT = 40; // 40 tiles high
+
+    // Camera position
+    private int cameraX;
+    private int cameraY;
+
     public GamePanel() {
         setPanelSize();
         initializeInputs();
@@ -49,23 +57,43 @@ public class GamePanel extends JPanel {
     }
 
     public void updateGame() {
-        // First check if the player can move in the intended direction
+        //check sa if pwede ba mu move sa tile iya gi face
         if (player.isMoving()) {
             boolean collision = collisionChecker.checkTile(player);
             if (collision) {
                 player.setMoving(false);
-                player.setPosition(player.getOldX(), player.getOldY()); // Reset to old position
+                player.setPosition(player.getOldX(), player.getOldY()); // if dili kay balik sa old position
             }
         }
 
         // Then update the player state
         player.update();
+
+        // Update camera position to follow player
+        updateCameraPosition();
+    }
+
+    private void updateCameraPosition() {
+        // Center the camera on the player
+        cameraX = (int)player.getX() - PANEL_WIDTH / 2;
+        cameraY = (int)player.getY() - PANEL_HEIGHT / 2;
+
+        // Clamp the camera position to the world boundaries
+        int maxCameraX = tileManager.TILE_SIZE * WORLD_WIDTH - PANEL_WIDTH;
+        int maxCameraY = tileManager.TILE_SIZE * WORLD_HEIGHT - PANEL_HEIGHT;
+
+        cameraX = Math.max(0, Math.min(cameraX, maxCameraX));
+        cameraY = Math.max(0, Math.min(cameraY, maxCameraY));
     }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        tileManager.draw(g);
-        player.render(g);
+
+        // Draw the tilemap with camera offset
+        tileManager.draw(g, cameraX, cameraY);
+
+        // Draw the player at the camera-adjusted position
+        player.render(g, cameraX, cameraY);
     }
 
     // Methods to delegate input handling to player
@@ -84,8 +112,21 @@ public class GamePanel extends JPanel {
     // Method for mouse interaction
     public void setPlayerPosition(int x, int y) {
         if (!player.isAttacking()) {
-            player.setDirection((x < player.getX()) ? 0 : 2); // LEFT or RIGHT
+            // Convert screen coordinates to world coordinates
+            int worldX = x + cameraX;
+            int worldY = y + cameraY;
+
+            player.setDirection((worldX < player.getX()) ? 0 : 2); // LEFT or RIGHT
             player.setMoving(true);
         }
+    }
+
+    // Getter for camera position
+    public int getCameraX() {
+        return cameraX;
+    }
+
+    public int getCameraY() {
+        return cameraY;
     }
 }
