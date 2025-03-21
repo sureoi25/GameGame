@@ -1,51 +1,316 @@
 package org.example.entity;
 
-import static org.example.utils.constants.Directions.*;
-import static org.example.utils.constants.PlayerConstants.*;
+import org.example.GamePanel;
+import org.example.objects.SuperObject;
 
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Random;
 import javax.imageio.ImageIO;
+
+import static org.example.utils.constants.Directions.*;
+import static org.example.utils.constants.PlayerConstants.*;
 
 public class Player extends Entity {
     private BufferedImage spriteSheet;
-    private int playerAction = IDLE_DOWN;
     private int lastNonAttackDirection = DOWN;
     private int attackTick = 0;
     private int attackCooldown = 30;
+    public int worldX;    // Current position in world coordinates
+    public int worldY;
+    public final int screenX; // Screen center position
+    public final int screenY;
+    private GamePanel gp;
+    private int objectIndex = 999;
+    private SuperObject inventory[] = new SuperObject[50];
+    private int inventorySize = 0;
+    private boolean hasKey = false;
+    private Random random = new Random();
+    private int nearbyObjectIndex = 999;
 
-    public Player(float x, float y, int width, int height) {
+    public Player(float x, float y, int width, int height, GamePanel gp) {
         super(x, y, width, height);
+        this.gp = gp;
         this.oldX = x;
         this.oldY = y;
+        this.worldX = (int)x;
+        this.worldY = (int)y;
+        this.screenX = gp.PANEL_WIDTH / 2;
+        this.screenY = gp.PANEL_HEIGHT / 2;
         this.collisionDetected = false;
+
+        // Player hitbox
+        this.hitboxWidth = width / 2;
+        this.hitboxHeight = height / 3;
+        this.hitboxOffsetX = (width - hitboxWidth) / 2;
+        this.hitboxOffsetY = height - hitboxHeight;
+
+        // Initialize solidArea Rectangle for collision detection
+        this.solidAreaDefaultX = hitboxOffsetX;
+        this.solidAreaDefaultY = hitboxOffsetY;
+        this.solidArea = new Rectangle(solidAreaDefaultX, solidAreaDefaultY, hitboxWidth, hitboxHeight);
+
         loadAnimations();
         this.state = IDLE_DOWN;
         this.aniSpeed = 15;
         this.direction = 2;
-        this.setSpeed(4.0f);
+        this.setSpeed(2.0f);
+
+        // Initialize player stats
+        initStats(100, 10); // Example values: 100 HP, 10 attack damage
     }
 
     @Override
     public void update() {
         updateAnimationTick();
         updateCooldowns();
-        updatePosition();
+
+        // Check tile collision first
+        boolean tileCollision = gp.collisionChecker.checkTile(this);
+
+        if (!tileCollision) {
+            // Only check object collision if no tile collision was detected
+            nearbyObjectIndex = gp.collisionChecker.checkObject(this, true);
+
+            // We no longer directly interact here
+            // The interaction will happen when 'E' is pressed
+        }
+
+        // Only update position if no collisions detected
+        if (!collisionDetected) {
+            updatePosition();
+        } else {
+            // Reset position if collision detected
+            x = oldX;
+            y = oldY;
+            worldX = (int)x;
+            worldY = (int)y;
+            collisionDetected = false;
+        }
+
         setAnimation();
     }
 
-    // New render method that takes camera position into account
+    // Add this new method to handle interactions when 'E' is pressed
+    public void interact() {
+        // Only interact if there's a nearby object
+        if (nearbyObjectIndex != 999) {
+            interactWithObject(nearbyObjectIndex);
+        }
+    }
+
+    private void interactWithObject(int index) {
+        if (gp.obj[index] != null) {
+            String objectName = gp.obj[index].name;
+
+            switch (objectName) {
+                case "Key":
+                    // Add key to inventory
+                    addToInventory(gp.obj[index]);
+                    hasKey = true;
+                    gp.obj[index] = null; // Remove from map after picking up
+                    break;
+
+                case "chest":
+                    // Only open if player has a key
+                    if (hasKey) {
+                        openChest(index);
+                        removeKey(); // Consume key
+                    } else {
+                        System.out.println("You need a key to open this chest!");
+                    }
+                    break;
+
+                case "chicken":
+                    heal(20);
+                    gp.obj[index] = null; // Remove after use
+                    break;
+                case "blue mushroom":
+                    increaseSpeed(0.5f);
+                    gp.obj[index] = null; // Remove after use
+                    break;
+                case "red mushroom":
+                    increaseHP(10);
+                    gp.obj[index] = null; // Remove after use
+                    break;
+                case "pork":
+                    increaseDamage(10);
+                    gp.obj[index] = null;
+                    break;
+                default:
+                    // Handle generic object collision
+                    if (gp.obj[index].collision) {
+                        collisionDetected = true;
+                    }
+                    break;
+            }
+        }
+    }
+
+    // Add an object to player's inventory
+    private void addToInventory(SuperObject obj) {
+        if (inventorySize < inventory.length) {
+            inventory[inventorySize] = obj;
+            inventorySize++;
+            System.out.println(obj.name + " added to inventory!");
+        } else {
+            System.out.println("Inventory full!");
+        }
+    }
+
+    // Remove a key from inventory after use
+    private void removeKey() {
+        boolean keyRemoved = false;
+        for (int i = 0; i < inventorySize; i++) {
+            if (inventory[i] != null && inventory[i].name.equals("Key")) {
+                // Remove key by shifting inventory items
+                for (int j = i; j < inventorySize - 1; j++) {
+                    inventory[j] = inventory[j + 1];
+                }
+                inventory[inventorySize - 1] = null;
+                inventorySize--;
+                keyRemoved = true;
+                break;
+            }
+        }
+
+        // Update key status
+        if (keyRemoved) {
+            System.out.println("Used a key to open the chest!");
+            hasKey = hasKeyInInventory();
+        }
+    }
+
+    // Check if player still has any keys in inventory
+    private boolean hasKeyInInventory() {
+        for (int i = 0; i < inventorySize; i++) {
+            if (inventory[i] != null && inventory[i].name.equals("Key")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Open chest and spawn a random item
+    private void openChest(int chestIndex) {
+        // Define possible loot items (excluding key and chest)
+        String[] possibleItems = {"chicken", "blue mushroom", "red mushroom", "pork"};
+
+        // Generate random item
+        int randomIndex = random.nextInt(possibleItems.length);
+        String randomItem = possibleItems[randomIndex];
+
+        // Get chest position before removing it
+        int itemX = gp.obj[chestIndex].worldX;
+        int itemY = gp.obj[chestIndex].worldY;
+
+        // Debug output
+        System.out.println("Opening chest at position: " + itemX + "," + itemY);
+        System.out.println("Selected random item: " + randomItem);
+
+        // Remove chest
+        gp.obj[chestIndex] = null;
+
+        // Use the ObjectFactory to create the new item
+        SuperObject newItem = gp.objectFactory.createObject(randomItem, itemX, itemY);
+
+        // Validate the new item
+        if (newItem == null) {
+            System.err.println("ERROR: Failed to create item: " + randomItem);
+            // Create a fallback item if possible
+            newItem = gp.objectFactory.createObject("Key", itemX, itemY);
+            if (newItem == null) {
+                System.err.println("ERROR: Failed to create fallback item. Chest will remain empty.");
+                return;
+            }
+        }
+
+        // Ensure the new item has proper coordinates and image
+        newItem.worldX = itemX;
+        newItem.worldY = itemY;
+
+        // Make sure the item has collision set appropriately (usually false for pickups)
+        newItem.collision = false;
+
+        // Place new item in the world (in the same slot as the chest)
+        gp.obj[chestIndex] = newItem;
+
+        System.out.println("Successfully spawned " + randomItem + " at position: " + itemX + "," + itemY);
+    }
+
+    // Helper method to create an object based on its name
+    private SuperObject createObjectByName(String name, int x, int y) {
+        // This is a simplified version - you would need to implement this
+        // according to your game's object creation system
+        SuperObject obj = null;
+
+        // Assuming you have a factory or a way to create objects
+        // For example:
+        // obj = gp.objectFactory.createObject(name);
+        // obj.worldX = x;
+        // obj.worldY = y;
+
+        // Placeholder implementation - this needs to be updated with your actual object creation logic
+        switch (name) {
+            case "chicken":
+                // Create chicken object
+                // obj = new OBJ_Chicken(gp);
+                break;
+            case "blue mushroom":
+                // Create blue mushroom object
+                // obj = new OBJ_BlueMushroom(gp);
+                break;
+            case "red mushroom":
+                // Create red mushroom object
+                // obj = new OBJ_RedMushroom(gp);
+                break;
+            case "pork":
+                // Create pork object
+                // obj = new OBJ_Pork(gp);
+                break;
+        }
+
+        // Set position
+        if (obj != null) {
+            obj.worldX = x;
+            obj.worldY = y;
+        }
+
+        return obj;
+    }
+
+    // Get inventory item by index
+    public SuperObject getInventoryItem(int index) {
+        if (index >= 0 && index < inventorySize) {
+            return inventory[index];
+        }
+        return null;
+    }
+
+    // Get current inventory size
+    public int getInventorySize() {
+        return inventorySize;
+    }
+
+    // Check if player has a specific item
+    public boolean hasItem(String itemName) {
+        for (int i = 0; i < inventorySize; i++) {
+            if (inventory[i] != null && inventory[i].name.equals(itemName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void render(Graphics g, int cameraX, int cameraY) {
         BufferedImage currentFrame = animations[state][aniIndex];
-
-        // Calculate screen position by subtracting camera offset
         int screenX = (int)x - cameraX;
         int screenY = (int)y - cameraY;
 
-        // Flip the image if facing left and using a side animation
-        if (playerDirection == LEFT &&
+        if (entityDirection == LEFT &&
                 (state == RUNNING_SIDE || state == IDLE_SIDE || state == ATTACK_SIDE)) {
             g.drawImage(currentFrame, screenX + width, screenY, -width, height, null);
         } else {
@@ -53,7 +318,6 @@ public class Player extends Entity {
         }
     }
 
-    // Original render method for backward compatibility
     @Override
     public void render(Graphics g) {
         render(g, 0, 0);
@@ -61,44 +325,37 @@ public class Player extends Entity {
 
     @Override
     protected void updatePosition() {
-        // Don't attempt to move if attacking
         if (moving && !attacking) {
+            // Save old position before moving
             oldX = x;
             oldY = y;
 
-            switch (playerDirection) {
-                case LEFT:
-                    x -= speed;
-                    break;
-                case UP:
-                    y -= speed;
-                    break;
-                case RIGHT:
-                    x += speed;
-                    break;
-                case DOWN:
-                    y += speed;
-                    break;
+            // Only move if no collision detected
+            if (!collisionDetected) {
+                switch (entityDirection) {
+                    case LEFT: x -= speed; break;
+                    case UP: y -= speed; break;
+                    case RIGHT: x += speed; break;
+                    case DOWN: y += speed; break;
+                }
+
+                // Update world coordinates
+                worldX = (int)x;
+                worldY = (int)y;
             }
-
-            // These will be checked by GamePanel
-            collisionDetected = false;
         }
-    }
-
-    public float getOldX() {
-        return oldX;
-    }
-
-    public float getOldY() {
-        return oldY;
     }
 
     @Override
     public void setDirection(int direction) {
         if (!attacking) {
-            this.playerDirection = direction;
+            this.entityDirection = direction;
             this.lastNonAttackDirection = direction;
+            this.moving = true;
+
+            // Save old position when changing direction
+            oldX = x;
+            oldY = y;
         }
     }
 
@@ -106,25 +363,24 @@ public class Player extends Entity {
         if (!attacking) {
             attacking = true;
             attackTick = 0;
-        }
-    }
 
-    public boolean isAttacking() {
-        return attacking;
+            // Check for entities in attack range
+            // Logic for attacking entities would go here
+        }
     }
 
     @Override
     protected void updateCooldowns() {
-        // Handle attack cooldown
         if (attacking) {
             attackTick++;
             if (attackTick >= attackCooldown) {
                 attacking = false;
                 attackTick = 0;
-                // Reset the player direction to the last non-attack direction
-                playerDirection = lastNonAttackDirection;
+                entityDirection = lastNonAttackDirection;
             }
         }
+
+        super.updateCooldowns(); // Call parent method for invulnerability timer
     }
 
     @Override
@@ -132,47 +388,28 @@ public class Player extends Entity {
         int startAni = state;
 
         if (attacking) {
-            switch (playerDirection) {
+            switch (entityDirection) {
                 case LEFT:
-                case RIGHT:
-                    state = ATTACK_SIDE;
-                    break;
-                case UP:
-                    state = ATTACK_UP;
-                    break;
-                case DOWN:
-                    state = ATTACK_DOWN;
-                    break;
+                case RIGHT: state = ATTACK_SIDE; break;
+                case UP: state = ATTACK_UP; break;
+                case DOWN: state = ATTACK_DOWN; break;
             }
         } else if (moving) {
-            switch (playerDirection) {
+            switch (entityDirection) {
                 case LEFT:
-                case RIGHT:
-                    state = RUNNING_SIDE;
-                    break;
-                case UP:
-                    state = RUNNING_UP;
-                    break;
-                case DOWN:
-                    state = RUNNING_DOWN;
-                    break;
+                case RIGHT: state = RUNNING_SIDE; break;
+                case UP: state = RUNNING_UP; break;
+                case DOWN: state = RUNNING_DOWN; break;
             }
         } else {
-            switch (playerDirection) {
+            switch (entityDirection) {
                 case LEFT:
-                case RIGHT:
-                    state = IDLE_SIDE;
-                    break;
-                case UP:
-                    state = IDLE_UP;
-                    break;
-                case DOWN:
-                    state = IDLE_DOWN;
-                    break;
+                case RIGHT: state = IDLE_SIDE; break;
+                case UP: state = IDLE_UP; break;
+                case DOWN: state = IDLE_DOWN; break;
             }
         }
 
-        // Reset animation index when changing animations
         if (startAni != state) {
             aniTick = 0;
             aniIndex = 0;
@@ -193,7 +430,7 @@ public class Player extends Entity {
             e.printStackTrace();
         } finally {
             try {
-                is.close();
+                if (is != null) is.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -208,5 +445,12 @@ public class Player extends Entity {
                 }
             }
         }
+    }
+
+    @Override
+    protected void die() {
+        super.die();
+        // Additional player death logic
+        // For example: game over screen, respawn logic, etc.
     }
 }

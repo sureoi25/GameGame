@@ -8,7 +8,6 @@ import static org.example.utils.constants.Directions.*;
 import static org.example.utils.constants.PlayerConstants.*;
 
 public class KeyBoardInputs implements KeyListener {
-
     private GamePanel gP;
     private boolean upPressed, downPressed, leftPressed, rightPressed;
 
@@ -42,6 +41,10 @@ public class KeyBoardInputs implements KeyListener {
                 break;
             case KeyEvent.VK_SPACE:
                 gP.attack();
+                break;
+            case KeyEvent.VK_E:
+                // Trigger interaction with nearby objects
+                gP.interact();
                 break;
         }
     }
