@@ -18,6 +18,7 @@ public class GamePanel extends JPanel {
     public CollisionChecker collisionChecker;
     public SuperObject obj[] = new SuperObject[10];
     public ObjectFactory objectFactory;
+    Sound sound  = new Sound();
 
     // Panel dimensions
     public final int PANEL_WIDTH = 960;
@@ -50,6 +51,11 @@ public class GamePanel extends JPanel {
         obj[1] = objectFactory.createObject("Key", 27 * 48, 34 * 48);
         obj[2] = objectFactory.createObject("chest", 33 * 48, 25 * 48);
         obj[3] = objectFactory.createObject("chest", 22 * 48, 8 * 48);
+        obj[4] = objectFactory.createObject("pork", 39 * 48, 2 * 48);
+        obj[5] = objectFactory.createObject("chicken", 3 * 48, 39 * 48);
+        obj[6] = objectFactory.createObject("blue mushroom", 25 * 48, 37 * 48);
+        obj[7] = objectFactory.createObject("red mushroom", 33 * 48, 15 * 48);
+
     }
 
     private void setPanelSize() {
@@ -117,11 +123,23 @@ public class GamePanel extends JPanel {
         player.attack();
     }
     public void interact() {
-        // Call the player's interact method to check for nearby objects
         player.interact();
     }
 
     // Camera getters
     public int getCameraX() { return cameraX; }
     public int getCameraY() { return cameraY; }
+
+    public void playMusic(int i){
+        sound.setFile(i);
+        sound.play();
+        sound.loop();
+    }
+    public void stopMusic(){
+        sound.stop();
+    }
+    public void playSE(int i){
+        sound.setFile(i);
+        sound.play();
+    }
 }
