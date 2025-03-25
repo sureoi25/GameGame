@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.entity.SlimeSpawner;
 import org.example.objects.SuperObject;
 import org.example.objects.ObjectFactory;
 import org.example.utils.CollisionChecker;
@@ -14,11 +15,12 @@ import java.awt.*;
 public class GamePanel extends JPanel {
     private MouseInputs mouseInputs;
     public Player player;
-    private TileManager tileManager;
+    public TileManager tileManager;
     public CollisionChecker collisionChecker;
     public SuperObject obj[] = new SuperObject[10];
     public ObjectFactory objectFactory;
     Sound sound  = new Sound();
+    SlimeSpawner slimeSpawner;
 
     // Panel dimensions
     public final int PANEL_WIDTH = 960;
@@ -43,6 +45,7 @@ public class GamePanel extends JPanel {
         player = new Player(288, 96, PLAYER_WIDTH, PLAYER_HEIGHT, this);
         setFocusable(true);
         requestFocus();
+       slimeSpawner = new SlimeSpawner(this);
     }
 
     public void setupGame() {
@@ -55,6 +58,9 @@ public class GamePanel extends JPanel {
         obj[5] = objectFactory.createObject("chicken", 3 * 48, 39 * 48);
         obj[6] = objectFactory.createObject("blue mushroom", 25 * 48, 37 * 48);
         obj[7] = objectFactory.createObject("red mushroom", 33 * 48, 15 * 48);
+
+        playMusic(3);
+        slimeSpawner.spawnSlimes();
 
     }
 
@@ -83,6 +89,7 @@ public class GamePanel extends JPanel {
 
         player.update();
         updateCameraPosition();
+        slimeSpawner.updateSlimes();
     }
 
     private void updateCameraPosition() {
@@ -108,6 +115,7 @@ public class GamePanel extends JPanel {
             }
         }
         player.render(g, cameraX, cameraY);
+        slimeSpawner.renderSlimes(g,cameraX,cameraY);
     }
 
     // Input handling methods

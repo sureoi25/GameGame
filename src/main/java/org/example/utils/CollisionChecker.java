@@ -44,6 +44,33 @@ public class CollisionChecker {
         return collision;
     }
 
+    public boolean checkTileAtLocation(int x, int y, int width, int height) {
+        // Convert coordinates to tile coordinates
+        int leftTile = x / tileManager.TILE_SIZE;
+        int rightTile = (x + width) / tileManager.TILE_SIZE;
+        int topTile = y / tileManager.TILE_SIZE;
+        int bottomTile = (y + height) / tileManager.TILE_SIZE;
+
+        // Ensure within world bounds
+        if (leftTile < 0 || rightTile >= tileManager.MAX_MAP_COL ||
+                topTile < 0 || bottomTile >= tileManager.MAX_MAP_ROW) {
+            return true; // Out of bounds is considered a collision
+        }
+
+        // Check each tile in the entity's bounding box
+        for (int row = topTile; row <= bottomTile; row++) {
+            for (int col = leftTile; col <= rightTile; col++) {
+                int tileNum = tileManager.mapTileNum[row][col];
+
+                // Check if the tile has collision
+                if (tileManager.tiles[tileNum].collision) {
+                    return true; // Collision detected
+                }
+            }
+        }
+        return false; // No collision
+    }
+
     public int checkObject(Entity entity, boolean player) {
         int index = 999; // Default return value when no collision
 

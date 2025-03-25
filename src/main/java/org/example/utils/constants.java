@@ -1,17 +1,14 @@
 package org.example.utils;
 
 public class constants {
-
-
-    public static class Directions{
+    public static class Directions {
         public static final int LEFT = 0;
         public static final int UP = 1;
         public static final int RIGHT = 2;
         public static final int DOWN = 3;
-
     }
 
-    public static class PlayerConstants{
+    public static class PlayerConstants {
         public static final int RUNNING_DOWN = 3;
         public static final int RUNNING_SIDE = 4;
         public static final int RUNNING_UP = 5;
@@ -23,10 +20,8 @@ public class constants {
         public static final int ATTACK_UP = 8;
         public static final int DIE = 9;
 
-        public static int GetSpriteAmount(int playerAction){
-
-            switch (playerAction){
-
+        public static int GetSpriteAmount(int playerAction) {
+            switch (playerAction) {
                 case RUNNING_DOWN:
                 case RUNNING_SIDE:
                 case RUNNING_UP:
@@ -42,6 +37,43 @@ public class constants {
                     return 3;
                 default:
                     return 1;
+            }
+        }
+    }
+
+    public static class SlimeConstants {
+        public static final int IDLE_DOWN = 0;
+        public static final int IDLE_SIDE = 1;
+        public static final int IDLE_UP = 2;
+
+        public static final int RUNNING_DOWN = 3;
+        public static final int RUNNING_SIDE = 4;
+        public static final int RUNNING_UP = 5;
+
+        public static final int ATTACK_DOWN = 6;
+        public static final int ATTACK_SIDE = 7;
+        public static final int ATTACK_UP = 8;
+
+        public static final int DEATH = 12;
+
+        public static int GetSpriteAmount(int state) {
+            switch(state) {
+                case IDLE_DOWN:
+                case IDLE_SIDE:
+                case IDLE_UP:
+                    return 4;
+                case RUNNING_DOWN:
+                case RUNNING_SIDE:
+                case RUNNING_UP:
+                    return 6;
+                case ATTACK_DOWN:
+                case ATTACK_SIDE:
+                case ATTACK_UP:
+                    return 7;
+                case DEATH:
+                    return 5;
+                default:
+                    return 0;
             }
         }
     }

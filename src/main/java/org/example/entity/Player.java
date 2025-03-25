@@ -111,12 +111,14 @@ public class Player extends Entity {
                     // Add key to inventory
                     addToInventory(gp.obj[index]);
                     hasKey = true;
+                    gp.playSE(5);
                     gp.obj[index] = null; // Remove from map after picking up
                     break;
 
                 case "chest":
                     // Only open if player has a key
                     if (hasKey) {
+                        gp.playSE(5);
                         openChest(index);
                         removeKey(); // Consume key
                     } else {
@@ -126,18 +128,22 @@ public class Player extends Entity {
 
                 case "chicken":
                     heal(20);
+                    gp.playSE(4);
                     gp.obj[index] = null; // Remove after use
                     break;
                 case "blue mushroom":
                     increaseSpeed(0.5f);
+                    gp.playSE(6);
                     gp.obj[index] = null; // Remove after use
                     break;
                 case "red mushroom":
                     increaseHP(10);
+                    gp.playSE(6);
                     gp.obj[index] = null; // Remove after use
                     break;
                 case "pork":
                     increaseDamage(10);
+                    gp.playSE(4);
                     gp.obj[index] = null;
                     break;
                 default:
@@ -241,69 +247,6 @@ public class Player extends Entity {
         System.out.println("Successfully spawned " + randomItem + " at position: " + itemX + "," + itemY);
     }
 
-    // Helper method to create an object based on its name
-    private SuperObject createObjectByName(String name, int x, int y) {
-        // This is a simplified version - you would need to implement this
-        // according to your game's object creation system
-        SuperObject obj = null;
-
-        // Assuming you have a factory or a way to create objects
-        // For example:
-        // obj = gp.objectFactory.createObject(name);
-        // obj.worldX = x;
-        // obj.worldY = y;
-
-        // Placeholder implementation - this needs to be updated with your actual object creation logic
-        switch (name) {
-            case "chicken":
-                // Create chicken object
-                // obj = new OBJ_Chicken(gp);
-                break;
-            case "blue mushroom":
-                // Create blue mushroom object
-                // obj = new OBJ_BlueMushroom(gp);
-                break;
-            case "red mushroom":
-                // Create red mushroom object
-                // obj = new OBJ_RedMushroom(gp);
-                break;
-            case "pork":
-                // Create pork object
-                // obj = new OBJ_Pork(gp);
-                break;
-        }
-
-        // Set position
-        if (obj != null) {
-            obj.worldX = x;
-            obj.worldY = y;
-        }
-
-        return obj;
-    }
-
-    // Get inventory item by index
-    public SuperObject getInventoryItem(int index) {
-        if (index >= 0 && index < inventorySize) {
-            return inventory[index];
-        }
-        return null;
-    }
-
-    // Get current inventory size
-    public int getInventorySize() {
-        return inventorySize;
-    }
-
-    // Check if player has a specific item
-    public boolean hasItem(String itemName) {
-        for (int i = 0; i < inventorySize; i++) {
-            if (inventory[i] != null && inventory[i].name.equals(itemName)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public void render(Graphics g, int cameraX, int cameraY) {
         BufferedImage currentFrame = animations[state][aniIndex];
