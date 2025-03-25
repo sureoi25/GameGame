@@ -1,6 +1,5 @@
 package org.example;
 
-import org.example.entity.SlimeSpawner;
 import org.example.objects.SuperObject;
 import org.example.objects.ObjectFactory;
 import org.example.utils.CollisionChecker;
@@ -17,137 +16,108 @@ public class GamePanel extends JPanel {
     public Player player;
     public TileManager tileManager;
     public CollisionChecker collisionChecker;
-    public SuperObject obj[] = new SuperObject[10];
+    public SuperObject[] obj = new SuperObject[10];
     public ObjectFactory objectFactory;
-    Sound sound  = new Sound();
-    SlimeSpawner slimeSpawner;
+    public Sound sound = new Sound();
 
-    // Panel dimensions
+    // Screen dimensions
     public final int PANEL_WIDTH = 960;
     public final int PANEL_HEIGHT = 540;
-    private final int PLAYER_WIDTH = 64;
-    private final int PLAYER_HEIGHT = 64;
+    private final int PLAYER_SIZE = 64;
 
     // World settings
-    public final int WORLD_WIDTH = 40;
-    public final int WORLD_HEIGHT = 40;
+    public final int WORLD_WIDTH_TILES = 40;
+    public final int WORLD_HEIGHT_TILES = 40;
+    public final int TILE_SIZE = 48; // Should match TileManager
 
-    // Camera position
+    // Camera
     private int cameraX;
     private int cameraY;
 
     public GamePanel() {
         setPanelSize();
-        initializeInputs();
-        tileManager = new TileManager(this);
-        collisionChecker = new CollisionChecker(tileManager);
-        objectFactory = new ObjectFactory(this);
-        player = new Player(288, 96, PLAYER_WIDTH, PLAYER_HEIGHT, this);
-        setFocusable(true);
-        requestFocus();
-       slimeSpawner = new SlimeSpawner(this);
-    }
-
-    public void setupGame() {
-        // Place objects in the world using objectFactory
-        obj[0] = objectFactory.createObject("Key", 13 * 48, 13 * 48);
-        obj[1] = objectFactory.createObject("Key", 27 * 48, 34 * 48);
-        obj[2] = objectFactory.createObject("chest", 33 * 48, 25 * 48);
-        obj[3] = objectFactory.createObject("chest", 22 * 48, 8 * 48);
-        obj[4] = objectFactory.createObject("pork", 39 * 48, 2 * 48);
-        obj[5] = objectFactory.createObject("chicken", 3 * 48, 39 * 48);
-        obj[6] = objectFactory.createObject("blue mushroom", 25 * 48, 37 * 48);
-        obj[7] = objectFactory.createObject("red mushroom", 33 * 48, 15 * 48);
-
-        playMusic(3);
-        slimeSpawner.spawnSlimes();
-
+        initializeSystems();
+        setupGame();
     }
 
     private void setPanelSize() {
         Dimension size = new Dimension(PANEL_WIDTH, PANEL_HEIGHT);
-        setMinimumSize(size);
         setPreferredSize(size);
-        setMaximumSize(size);
     }
 
-    private void initializeInputs() {
+    private void initializeSystems() {
+        tileManager = new TileManager(this);
+        collisionChecker = new CollisionChecker(tileManager);
+        objectFactory = new ObjectFactory(this);
+        player = new Player(288, 96, PLAYER_SIZE, PLAYER_SIZE, this);
+        setupInputs();
+    }
+
+    private void setupInputs() {
         mouseInputs = new MouseInputs(this);
         addKeyListener(new KeyBoardInputs(this));
         addMouseListener(mouseInputs);
         addMouseMotionListener(mouseInputs);
+        setFocusable(true);
+    }
+
+    public void setupGame() {
+        // Place objects
+        obj[0] = objectFactory.createObject("Key", 13 * TILE_SIZE, 13 * TILE_SIZE);
+        obj[1] = objectFactory.createObject("Key", 27 * TILE_SIZE, 34 * TILE_SIZE);
+        obj[2] = objectFactory.createObject("chest", 33 * TILE_SIZE, 25 * TILE_SIZE);
+        obj[3] = objectFactory.createObject("chest", 22 * TILE_SIZE, 8 * TILE_SIZE);
+        obj[4] = objectFactory.createObject("pork", 39 * TILE_SIZE, 2 * TILE_SIZE);
+        obj[5] = objectFactory.createObject("chicken", 3 * TILE_SIZE, 39 * TILE_SIZE);
+        obj[6] = objectFactory.createObject("blue mushroom", 25 * TILE_SIZE, 37 * TILE_SIZE);
+        obj[7] = objectFactory.createObject("red mushroom", 33 * TILE_SIZE, 15 * TILE_SIZE);
+
+        playMusic(3);
     }
 
     public void updateGame() {
-        if (player.isMoving()) {
-            boolean collision = collisionChecker.checkTile(player);
-            if (collision) {
-                player.setMoving(false);
-                player.setPosition(player.getOldX(), player.getOldY());
-            }
-        }
-
         player.update();
-        updateCameraPosition();
-        slimeSpawner.updateSlimes();
+        updateCamera();
     }
 
-    private void updateCameraPosition() {
-        // Center the camera on the player
+    private void updateCamera() {
         cameraX = (int)player.getX() - PANEL_WIDTH / 2;
         cameraY = (int)player.getY() - PANEL_HEIGHT / 2;
 
-        // Clamp to world boundaries
-        int maxCameraX = tileManager.TILE_SIZE * WORLD_WIDTH - PANEL_WIDTH;
-        int maxCameraY = tileManager.TILE_SIZE * WORLD_HEIGHT - PANEL_HEIGHT;
-
+        // Clamp camera to world bounds
+        int maxCameraX = WORLD_WIDTH_TILES * TILE_SIZE - PANEL_WIDTH;
+        int maxCameraY = WORLD_HEIGHT_TILES * TILE_SIZE - PANEL_HEIGHT;
         cameraX = Math.max(0, Math.min(cameraX, maxCameraX));
         cameraY = Math.max(0, Math.min(cameraY, maxCameraY));
     }
 
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+
+        // Draw world
         tileManager.draw(g, cameraX, cameraY);
-        Graphics2D g2 = (Graphics2D) g;
-        for (int i = 0; i < obj.length; ++i) {
-            if (obj[i] != null) {
-                obj[i].draw(g2, this);
-            }
+
+        // Draw objects
+        for (SuperObject o : obj) {
+            if (o != null) o.draw((Graphics2D)g, this);
         }
+
+        // Draw entities
         player.render(g, cameraX, cameraY);
-        slimeSpawner.renderSlimes(g,cameraX,cameraY);
     }
 
-    // Input handling methods
-    public void setDirection(int direction) {
-        player.setDirection(direction);
-    }
+    // Audio methods
+    public void playMusic(int i) { sound.setFile(i); sound.play(); sound.loop(); }
+    public void stopMusic() { sound.stop(); }
+    public void playSE(int i) { sound.setFile(i); sound.play(); }
 
-    public void setMoving(boolean moving) {
-        player.setMoving(moving);
-    }
+    // Input methods
+    public void setDirection(int direction) { player.setDirection(direction); }
+    public void setMoving(boolean moving) { player.setMoving(moving); }
+    public void attack() { player.attack(); }
+    public void interact() { player.interact(); }
 
-    public void attack() {
-        player.attack();
-    }
-    public void interact() {
-        player.interact();
-    }
-
-    // Camera getters
+    // Camera access
     public int getCameraX() { return cameraX; }
     public int getCameraY() { return cameraY; }
-
-    public void playMusic(int i){
-        sound.setFile(i);
-        sound.play();
-        sound.loop();
-    }
-    public void stopMusic(){
-        sound.stop();
-    }
-    public void playSE(int i){
-        sound.setFile(i);
-        sound.play();
-    }
 }
