@@ -13,6 +13,7 @@ import javax.imageio.ImageIO;
 
 import static org.example.utils.constants.Directions.*;
 import static org.example.utils.constants.PlayerConstants.*;
+import static org.example.utils.constants.SlimeConstants.DEATH;
 
 public class Player extends Entity {
     private BufferedImage spriteSheet;
@@ -30,6 +31,8 @@ public class Player extends Entity {
     private boolean hasKey = false;
     private Random random = new Random();
     private int nearbyObjectIndex = 999;
+    private boolean dead = false;
+
 
     public Player(float x, float y, int width, int height, GamePanel gp) {
         super(x, y, width, height);
@@ -307,8 +310,6 @@ public class Player extends Entity {
             attacking = true;
             attackTick = 0;
 
-            // Check for entities in attack range
-            // Logic for attacking entities would go here
         }
     }
 
@@ -389,11 +390,65 @@ public class Player extends Entity {
             }
         }
     }
+    public boolean isDead() {
+        return dead;
+    }
 
     @Override
     protected void die() {
         super.die();
-        // Additional player death logic
-        // For example: game over screen, respawn logic, etc.
+        this.dead = true;
+
+        state = DEATH;
+        aniIndex = 0;
+        aniTick = 0;
+        moving = false;
+    }
+    public void restart() {
+        // Reset player state
+        this.currentHp = 100; // Default max health
+        this.dead = false;
+        this.state = IDLE_DOWN;
+        this.x = 288; // Default spawn point
+        this.y = 96;
+        this.worldX = (int)x;
+        this.worldY = (int)y;
+        this.alive = true;
+    }
+    public void takeDamage(int damage) {
+        if (!invulnerable && alive) {
+            System.out.println("Player taking damage: " + damage);
+            System.out.println("Current HP before damage: " + currentHp);
+
+            currentHp -= damage;
+
+            System.out.println("Current HP after damage: " + currentHp);
+
+            if (currentHp <= 0) {
+                currentHp = 0;
+                System.out.println("Player died!");
+                die();
+            }
+
+            invulnerable = true;
+            invulnerabilityTime = 0;
+
+            System.out.println("Player is now invulnerable for a short time");
+        } else if (invulnerable) {
+            System.out.println("Player is currently invulnerable");
+        }
+    }
+    public void attackNearbyEntities(SlimeManager slimeManager) {
+        for (Slime slime : slimeManager.getSlimes()) {
+            // Check if slime is within attack range
+            float xDistance = Math.abs(this.getHitboxX() - slime.getHitboxX());
+            float yDistance = Math.abs(this.getHitboxY() - slime.getHitboxY());
+            float attackRange = width; // Adjust as needed
+
+            if (xDistance < attackRange && yDistance < attackRange && attacking) {
+                slime.takeDamage(this.attackDamage);
+                System.out.println("Player attacked slime! Damage: " + this.attackDamage);
+            }
+        }
     }
 }

@@ -10,6 +10,7 @@ import static org.example.utils.constants.PlayerConstants.*;
 public class KeyBoardInputs implements KeyListener {
     private GamePanel gP;
     private boolean upPressed, downPressed, leftPressed, rightPressed;
+    private boolean gamePaused = false;
 
     public KeyBoardInputs(GamePanel gP) {
         this.gP = gP;
@@ -22,6 +23,15 @@ public class KeyBoardInputs implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
+        // Handle inputs differently based on game state
+        if (gP.player.isDead()) {
+            handleDeadStateInput(e);
+        } else {
+            handleActiveGameInput(e);
+        }
+    }
+
+    private void handleActiveGameInput(KeyEvent e) {
         switch (e.getKeyCode()) {
             case KeyEvent.VK_W:
                 upPressed = true;
@@ -46,28 +56,44 @@ public class KeyBoardInputs implements KeyListener {
                 // Trigger interaction with nearby objects
                 gP.interact();
                 break;
+            case KeyEvent.VK_P:
+                // Toggle pause
+                togglePause();
+                break;
+        }
+    }
+
+    private void handleDeadStateInput(KeyEvent e) {
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_R:
+                // Restart the game when player is dead
+                gP.restartGame();
+                break;
         }
     }
 
     @Override
     public void keyReleased(KeyEvent e) {
-        switch (e.getKeyCode()) {
-            case KeyEvent.VK_W:
-                upPressed = false;
-                updateMovementState();
-                break;
-            case KeyEvent.VK_A:
-                leftPressed = false;
-                updateMovementState();
-                break;
-            case KeyEvent.VK_S:
-                downPressed = false;
-                updateMovementState();
-                break;
-            case KeyEvent.VK_D:
-                rightPressed = false;
-                updateMovementState();
-                break;
+        // Only process key releases if not dead and not paused
+        if (!gP.player.isDead() && !gamePaused) {
+            switch (e.getKeyCode()) {
+                case KeyEvent.VK_W:
+                    upPressed = false;
+                    updateMovementState();
+                    break;
+                case KeyEvent.VK_A:
+                    leftPressed = false;
+                    updateMovementState();
+                    break;
+                case KeyEvent.VK_S:
+                    downPressed = false;
+                    updateMovementState();
+                    break;
+                case KeyEvent.VK_D:
+                    rightPressed = false;
+                    updateMovementState();
+                    break;
+            }
         }
     }
 
@@ -90,5 +116,10 @@ public class KeyBoardInputs implements KeyListener {
             // Only stop moving when all keys are released
             gP.setMoving(false);
         }
+    }
+
+    private void togglePause() {
+        gamePaused = !gamePaused;
+        gP.setPaused(gamePaused);
     }
 }

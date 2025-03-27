@@ -1,5 +1,6 @@
 package org.example;
 
+import org.example.entity.SlimeManager;
 import org.example.objects.SuperObject;
 import org.example.objects.ObjectFactory;
 import org.example.utils.CollisionChecker;
@@ -19,6 +20,7 @@ public class GamePanel extends JPanel {
     public SuperObject[] obj = new SuperObject[10];
     public ObjectFactory objectFactory;
     public Sound sound = new Sound();
+    public SlimeManager slimeManager;
 
     // Screen dimensions
     public final int PANEL_WIDTH = 960;
@@ -33,6 +35,8 @@ public class GamePanel extends JPanel {
     // Camera
     private int cameraX;
     private int cameraY;
+
+    private boolean paused = false;
 
     public GamePanel() {
         setPanelSize();
@@ -51,6 +55,7 @@ public class GamePanel extends JPanel {
         objectFactory = new ObjectFactory(this);
         player = new Player(288, 96, PLAYER_SIZE, PLAYER_SIZE, this);
         setupInputs();
+        slimeManager = new SlimeManager(this);
     }
 
     private void setupInputs() {
@@ -76,8 +81,62 @@ public class GamePanel extends JPanel {
     }
 
     public void updateGame() {
-        player.update();
-        updateCamera();
+        if (!player.isDead() && !paused) {
+            player.update();
+
+            // Add attack logic for player
+            if (player.isAttacking()) {
+                player.attackNearbyEntities(slimeManager);
+            }
+
+            slimeManager.update();
+            updateCamera();
+        }
+    }
+    public void setPaused(boolean pauseState) {
+        this.paused = pauseState;
+
+        // Optional: Add pause sound effect or visual indicator
+        if (paused) {
+            stopMusic(); // Optionally pause background music
+        } else {
+            playMusic(3); // Resume background music
+        }
+    }
+    public void restartGame() {
+        if (player.isDead()) {
+            // Reset player
+            player.restart();
+
+            // Reset slime manager
+            slimeManager = new SlimeManager(this);
+
+            // Respawn objects
+            setupGame();
+
+            // Ensure game is unpaused
+            paused = false;
+        }
+    }
+    private void renderPauseScreen(Graphics g) {
+        if (paused) {
+            // Semi-transparent overlay
+            g.setColor(new Color(0, 0, 0, 128));
+            g.fillRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
+
+            // Pause text
+            g.setFont(new Font("Arial", Font.BOLD, 48));
+            g.setColor(Color.WHITE);
+            String pauseText = "PAUSED";
+            int textWidth = g.getFontMetrics().stringWidth(pauseText);
+            g.drawString(pauseText, (PANEL_WIDTH - textWidth) / 2, PANEL_HEIGHT / 2);
+
+            // Optional: Add instructions
+            g.setFont(new Font("Arial", Font.PLAIN, 24));
+            String instructionText = "Press P to resume";
+            int instructionWidth = g.getFontMetrics().stringWidth(instructionText);
+            g.drawString(instructionText, (PANEL_WIDTH - instructionWidth) / 2, PANEL_HEIGHT / 2 + 50);
+        }
     }
 
     private void updateCamera() {
@@ -91,6 +150,7 @@ public class GamePanel extends JPanel {
         cameraY = Math.max(0, Math.min(cameraY, maxCameraY));
     }
 
+    @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
@@ -104,6 +164,33 @@ public class GamePanel extends JPanel {
 
         // Draw entities
         player.render(g, cameraX, cameraY);
+        slimeManager.render(g, cameraX, cameraY);
+
+        // Render game over or pause screens
+        if (player.isDead()) {
+            renderGameOverScreen(g);
+        } else if (paused) {
+            renderPauseScreen(g);
+        }
+    }
+    private void renderGameOverScreen(Graphics g) {
+        // Semi-transparent overlay
+        g.setColor(new Color(0, 0, 0, 128));
+        g.fillRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
+
+        // Game Over text
+        g.setFont(new Font("Arial", Font.BOLD, 48));
+        g.setColor(Color.RED);
+        String gameOverText = "GAME OVER";
+        int textWidth = g.getFontMetrics().stringWidth(gameOverText);
+        g.drawString(gameOverText, (PANEL_WIDTH - textWidth) / 2, PANEL_HEIGHT / 2);
+
+        // Restart instructions
+        g.setFont(new Font("Arial", Font.PLAIN, 24));
+        g.setColor(Color.WHITE);
+        String restartText = "Press R to Restart";
+        int restartWidth = g.getFontMetrics().stringWidth(restartText);
+        g.drawString(restartText, (PANEL_WIDTH - restartWidth) / 2, PANEL_HEIGHT / 2 + 50);
     }
 
     // Audio methods

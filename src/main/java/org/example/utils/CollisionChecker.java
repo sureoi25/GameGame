@@ -23,16 +23,20 @@ public class CollisionChecker {
         float nextHitboxX = entity.getNextHitboxX();
         float nextHitboxY = entity.getNextHitboxY();
 
-        // Check world boundaries
+        // Calculate world boundaries precisely
         int worldWidth = tileManager.MAX_MAP_COL * tileManager.TILE_SIZE;
         int worldHeight = tileManager.MAX_MAP_ROW * tileManager.TILE_SIZE;
 
-        if (nextHitboxX < 0 || nextHitboxX + hitboxWidth > worldWidth ||
-                nextHitboxY < 0 || nextHitboxY + hitboxHeight > worldHeight) {
-            return true;
+        // Precise boundary check without buffer
+        if (nextHitboxX < 0 ||
+                nextHitboxX + hitboxWidth > worldWidth ||
+                nextHitboxY < 0 ||
+                nextHitboxY + hitboxHeight > worldHeight) {
+            entity.setCollisionDetected(true);
+            return true; // Collision detected at world boundary
         }
 
-        // Check all four corners of the hitbox
+        // Check all four corners of the hitbox for tile collision
         boolean collision = checkPoint(nextHitboxX, nextHitboxY) ||
                 checkPoint(nextHitboxX + hitboxWidth, nextHitboxY) ||
                 checkPoint(nextHitboxX, nextHitboxY + hitboxHeight) ||
@@ -57,7 +61,7 @@ public class CollisionChecker {
             return true; // Out of bounds is considered a collision
         }
 
-        // Check each tile in the entity's bounding box
+        // Check each tile in the location
         for (int row = topTile; row <= bottomTile; row++) {
             for (int col = leftTile; col <= rightTile; col++) {
                 int tileNum = tileManager.mapTileNum[row][col];
@@ -135,10 +139,10 @@ public class CollisionChecker {
         int tileCol = (int) (x / tileManager.TILE_SIZE);
         int tileRow = (int) (y / tileManager.TILE_SIZE);
 
-        // Check out of bounds
+        // Strict boundary check
         if (tileCol < 0 || tileCol >= tileManager.MAX_MAP_COL ||
                 tileRow < 0 || tileRow >= tileManager.MAX_MAP_ROW) {
-            return true;
+            return true; // Out of bounds is a collision
         }
 
         // Check if tile has collision
