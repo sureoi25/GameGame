@@ -160,9 +160,7 @@ public abstract class Entity {
     public float getY() { return y; }
     public int getWidth() { return width; }
     public int getHeight() { return height; }
-    public float getSpeed() { return speed; }
     public void setSpeed(float speed) { this.speed = speed; }
-    public boolean isAttacking() { return attacking; }
 
     public void setCollisionDetected(boolean collision) { this.collisionDetected = collision; }
     public boolean isCollisionDetected() { return collisionDetected; }
@@ -235,6 +233,8 @@ public abstract class Entity {
     public int getCurrentHp() { return currentHp; }
     public int getMaxHp() { return maxHp; }
     public int getAttackDamage() { return attackDamage; }
+    public float getSpeed() { return speed; }
+    public boolean isAttacking() { return attacking; }
     public void setAttackDamage(int attackDamage) { this.attackDamage = attackDamage; }
     public boolean isAlive() { return alive; }
     public void setAlive(boolean alive) { this.alive = alive; }

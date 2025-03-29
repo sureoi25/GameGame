@@ -399,6 +399,9 @@ public class Player extends Entity {
         super.die();
         this.dead = true;
 
+        gp.sound.stop();
+        gp.playSE(8);
+
         state = DEATH;
         aniIndex = 0;
         aniTick = 0;
@@ -414,8 +417,10 @@ public class Player extends Entity {
         this.worldX = (int)x;
         this.worldY = (int)y;
         this.alive = true;
+
     }
     public void takeDamage(int damage) {
+        gp.playSE(2);
         if (!invulnerable && alive) {
             System.out.println("Player taking damage: " + damage);
             System.out.println("Current HP before damage: " + currentHp);
@@ -439,6 +444,7 @@ public class Player extends Entity {
         }
     }
     public void attackNearbyEntities(SlimeManager slimeManager) {
+        gp.playSE(7);
         for (Slime slime : slimeManager.getSlimes()) {
             // Check if slime is within attack range
             float xDistance = Math.abs(this.getHitboxX() - slime.getHitboxX());

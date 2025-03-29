@@ -6,11 +6,17 @@ public class Game implements Runnable {
     private GamePanel gamePanel;
     private Thread gameThread;
     private final int FPS_SET = 120;
+    private boolean gameStarted = false;
 
     public Game() {
+        // Create GameWindow with reference to this Game instance
+        gameWindow = new GameWindow(this);
+    }
+
+    public void startGame() {
+        gameStarted = true;
         gamePanel = new GamePanel();
-        gameWindow = new GameWindow(gamePanel);
-        gamePanel.requestFocus();
+        gameWindow.startGame(gamePanel);
         gamePanel.setupGame();
         startGameLoop();
     }
@@ -38,8 +44,10 @@ public class Game implements Runnable {
             previousTime = currentTime;
 
             if (deltaF >= 1) {
-                gamePanel.updateGame();
-                gamePanel.repaint();
+                if (gameStarted) {
+                    gamePanel.updateGame();
+                    gamePanel.repaint();
+                }
                 frames++;
                 deltaF--;
             }

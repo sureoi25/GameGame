@@ -8,6 +8,7 @@ import org.example.entity.Player;
 import org.example.inputs.KeyBoardInputs;
 import org.example.inputs.MouseInputs;
 import org.example.tile.TileManager;
+import org.example.HUD; // Import the new HUD class
 
 import javax.swing.JPanel;
 import java.awt.*;
@@ -21,6 +22,7 @@ public class GamePanel extends JPanel {
     public ObjectFactory objectFactory;
     public Sound sound = new Sound();
     public SlimeManager slimeManager;
+    public HUD hud; // Add HUD instance
 
     // Screen dimensions
     public final int PANEL_WIDTH = 960;
@@ -56,6 +58,9 @@ public class GamePanel extends JPanel {
         player = new Player(288, 96, PLAYER_SIZE, PLAYER_SIZE, this);
         setupInputs();
         slimeManager = new SlimeManager(this);
+
+        // Initialize HUD after player is created
+        hud = new HUD(this, player,slimeManager);
     }
 
     private void setupInputs() {
@@ -93,18 +98,22 @@ public class GamePanel extends JPanel {
             updateCamera();
         }
     }
+
     public void setPaused(boolean pauseState) {
         this.paused = pauseState;
 
         // Optional: Add pause sound effect or visual indicator
         if (paused) {
-            stopMusic(); // Optionally pause background music
+            sound.stop(); // Optionally pause background music
         } else {
             playMusic(3); // Resume background music
         }
     }
+
     public void restartGame() {
         if (player.isDead()) {
+            sound.stop();
+
             // Reset player
             player.restart();
 
@@ -118,6 +127,7 @@ public class GamePanel extends JPanel {
             paused = false;
         }
     }
+
     private void renderPauseScreen(Graphics g) {
         if (paused) {
             // Semi-transparent overlay
@@ -153,18 +163,22 @@ public class GamePanel extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
 
         // Draw world
         tileManager.draw(g, cameraX, cameraY);
 
         // Draw objects
         for (SuperObject o : obj) {
-            if (o != null) o.draw((Graphics2D)g, this);
+            if (o != null) o.draw(g2d, this);
         }
 
         // Draw entities
         player.render(g, cameraX, cameraY);
         slimeManager.render(g, cameraX, cameraY);
+
+        // Draw HUD (always on top, not affected by camera)
+        hud.draw(g2d);
 
         // Render game over or pause screens
         if (player.isDead()) {
@@ -173,6 +187,7 @@ public class GamePanel extends JPanel {
             renderPauseScreen(g);
         }
     }
+
     private void renderGameOverScreen(Graphics g) {
         // Semi-transparent overlay
         g.setColor(new Color(0, 0, 0, 128));
@@ -191,13 +206,19 @@ public class GamePanel extends JPanel {
         String restartText = "Press R to Restart";
         int restartWidth = g.getFontMetrics().stringWidth(restartText);
         g.drawString(restartText, (PANEL_WIDTH - restartWidth) / 2, PANEL_HEIGHT / 2 + 50);
+
     }
 
     // Audio methods
-    public void playMusic(int i) { sound.setFile(i); sound.play(); sound.loop(); }
-    public void stopMusic() { sound.stop(); }
+    public void playMusic(int i) {
+        if (!player.isDead()) {
+            sound.setFile(i);
+            sound.play();
+            sound.loop();
+        }
+    }
     public void playSE(int i) { sound.setFile(i); sound.play(); }
-
+    public void stopMusic(){ sound.stop();}
     // Input methods
     public void setDirection(int direction) { player.setDirection(direction); }
     public void setMoving(boolean moving) { player.setMoving(moving); }

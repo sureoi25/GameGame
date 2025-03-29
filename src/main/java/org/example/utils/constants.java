@@ -54,7 +54,7 @@ public class constants {
         public static final int ATTACK_SIDE = 7;
         public static final int ATTACK_UP = 8;
 
-        public static final int DEATH = 12;
+        public static final int DEATH = 9;
 
         public static int GetSpriteAmount(int state) {
             switch(state) {
