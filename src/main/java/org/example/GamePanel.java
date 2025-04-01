@@ -84,6 +84,17 @@ public class GamePanel extends JPanel {
 
         playMusic(3);
     }
+    public void setupRestart(){
+        obj[0] = objectFactory.createObject("Key", 13 * TILE_SIZE, 13 * TILE_SIZE);
+        obj[1] = objectFactory.createObject("Key", 27 * TILE_SIZE, 34 * TILE_SIZE);
+        obj[2] = objectFactory.createObject("chest", 33 * TILE_SIZE, 25 * TILE_SIZE);
+        obj[3] = objectFactory.createObject("chest", 22 * TILE_SIZE, 8 * TILE_SIZE);
+        obj[4] = objectFactory.createObject("pork", 39 * TILE_SIZE, 2 * TILE_SIZE);
+        obj[5] = objectFactory.createObject("chicken", 3 * TILE_SIZE, 39 * TILE_SIZE);
+        obj[6] = objectFactory.createObject("blue mushroom", 25 * TILE_SIZE, 37 * TILE_SIZE);
+        obj[7] = objectFactory.createObject("red mushroom", 33 * TILE_SIZE, 15 * TILE_SIZE);
+
+    }
 
     public void updateGame() {
         if (!player.isDead() && !paused) {
@@ -121,7 +132,7 @@ public class GamePanel extends JPanel {
             slimeManager = new SlimeManager(this);
 
             // Respawn objects
-            setupGame();
+            setupRestart();
 
             // Ensure game is unpaused
             paused = false;
