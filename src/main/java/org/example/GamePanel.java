@@ -39,6 +39,7 @@ public class GamePanel extends JPanel {
     private int cameraY;
 
     private boolean paused = false;
+    private boolean gameCompleted = false;
 
     public GamePanel() {
         setPanelSize();
@@ -106,6 +107,16 @@ public class GamePanel extends JPanel {
             }
 
             slimeManager.update();
+
+            if (slimeManager.areWavesComplete()) {
+                System.out.println("All waves completed: " + slimeManager.getCurrentWave() +
+                        " > " + slimeManager.WAVE_SLIME_COUNTS.length);
+
+                if (!gameCompleted) {
+                    gameCompleted = true;
+                }
+            }
+
             updateCamera();
         }
     }
@@ -122,7 +133,7 @@ public class GamePanel extends JPanel {
     }
 
     public void restartGame() {
-        if (player.isDead()) {
+        if (player.isDead() || gameCompleted) {
             sound.stop();
 
             // Reset player
@@ -130,7 +141,7 @@ public class GamePanel extends JPanel {
 
             // Reset slime manager
             slimeManager = new SlimeManager(this);
-
+            gameCompleted = false;
             // Respawn objects
             setupRestart();
 
@@ -196,7 +207,29 @@ public class GamePanel extends JPanel {
             renderGameOverScreen(g);
         } else if (paused) {
             renderPauseScreen(g);
+        } else if (gameCompleted){
+            renderSuccessScreen(g);
         }
+    }
+    private void renderSuccessScreen(Graphics g) {
+        // Semi-transparent overlay
+        g.setColor(new Color(0, 0, 0, 128));
+        g.fillRect(0, 0, PANEL_WIDTH, PANEL_HEIGHT);
+
+        // Game Over text
+        g.setFont(new Font("Arial", Font.BOLD, 48));
+        g.setColor(Color.GREEN);
+        String gameOverText = "You WON!";
+        int textWidth = g.getFontMetrics().stringWidth(gameOverText);
+        g.drawString(gameOverText, (PANEL_WIDTH - textWidth) / 2, PANEL_HEIGHT / 2);
+
+        // Restart instructions
+        g.setFont(new Font("Arial", Font.PLAIN, 24));
+        g.setColor(Color.WHITE);
+        String restartText = "Press R to Restart";
+        int restartWidth = g.getFontMetrics().stringWidth(restartText);
+        g.drawString(restartText, (PANEL_WIDTH - restartWidth) / 2, PANEL_HEIGHT / 2 + 50);
+
     }
 
     private void renderGameOverScreen(Graphics g) {
@@ -239,4 +272,9 @@ public class GamePanel extends JPanel {
     // Camera access
     public int getCameraX() { return cameraX; }
     public int getCameraY() { return cameraY; }
+    //game complete
+    public boolean isGameCompleted() {
+        return gameCompleted;
+    }
+
 }

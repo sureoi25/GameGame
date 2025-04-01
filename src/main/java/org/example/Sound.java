@@ -21,6 +21,7 @@ public class Sound {
             sound_url[6] = getClass().getResource("/Sound/power_up.wav");
             sound_url[7] = getClass().getResource("/Sound/click.wav");
             sound_url[8] = getClass().getResource("/Sound/game over.wav");
+            sound_url[9] = getClass().getResource("/Sound/Hall of Fame pokemon emerald.wav");
         }catch (Exception e){
             e.printStackTrace();
         }

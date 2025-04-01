@@ -23,7 +23,7 @@ public class SlimeManager {
     private final int WAVE_DISPLAY_TIME = 180; // 3 seconds at 60 FPS
 
     // Wave configurations
-    private final int[] WAVE_SLIME_COUNTS = {10, 12, 15};
+    public final int[] WAVE_SLIME_COUNTS = {10, 12, 15};
 
     // World and spawn parameters
     private final int WORLD_WIDTH_TILES;
@@ -62,22 +62,15 @@ public class SlimeManager {
         // Clear any remaining slimes from previous wave
         slimes.clear();
 
-        // Spawn slimes for this wave
-        int spawnedCount = 0;
-        int maxAttempts = 500; // Increased max attempts to ensure all slimes spawn
-        int attempts = 0;
-
-        while (spawnedCount < totalSlimesInWave && attempts < maxAttempts) {
+        // Spawn slimes for this wave - improved spawning reliability
+        for (int i = 0; i < totalSlimesInWave; i++) {
             Slime spawned = spawnSlimeAtRandomLocation();
             if (spawned != null) {
-                spawnedCount++;
-                System.out.println("DEBUG: Spawned slime " + spawnedCount + "/" + totalSlimesInWave);
+                System.out.println("DEBUG: Spawned slime " + (i + 1) + "/" + totalSlimesInWave);
+            } else {
+                // Retry if spawn failed
+                i--;
             }
-            attempts++;
-        }
-
-        if (spawnedCount < totalSlimesInWave) {
-            System.out.println("WARNING: Could only spawn " + spawnedCount + " out of " + totalSlimesInWave + " slimes");
         }
 
         // Increment wave
@@ -86,51 +79,85 @@ public class SlimeManager {
 
     public Slime spawnSlimeAtRandomLocation() {
         int spawnAttempts = 0;
+        int maxSpawnAttempts = 1000;
         int x, y;
-        do {
-            x = random.nextInt(WORLD_WIDTH_TILES * TILE_SIZE);
-            y = random.nextInt(WORLD_HEIGHT_TILES * TILE_SIZE);
+
+        // Define size for the spawn area - stay away from edges
+        int safeMargin = TILE_SIZE;
+        int maxX = (WORLD_WIDTH_TILES * TILE_SIZE) - (2 * safeMargin);
+        int maxY = (WORLD_HEIGHT_TILES * TILE_SIZE) - (2 * safeMargin);
+
+        while (spawnAttempts < maxSpawnAttempts) {
+            // Generate position within safe bounds to avoid edge issues
+            x = safeMargin + random.nextInt(maxX);
+            y = safeMargin + random.nextInt(maxY);
+
             spawnAttempts++;
 
-            // Print debug information about spawn attempt
-            if (spawnAttempts % 10 == 0) {
+            // Debug output
+            if (spawnAttempts % 50 == 0) {
                 System.out.println("DEBUG: Attempting to spawn slime at (" + x + "," + y + ") - attempt " + spawnAttempts);
             }
 
-            // Prevent infinite loop
-            if (spawnAttempts > 100) {
-                // Try a different approach to find valid spawn location
-                for (int i = 0; i < WORLD_WIDTH_TILES; i += 5) {
-                    for (int j = 0; j < WORLD_HEIGHT_TILES; j += 5) {
-                        x = i * TILE_SIZE + random.nextInt(TILE_SIZE * 4);
-                        y = j * TILE_SIZE + random.nextInt(TILE_SIZE * 4);
-
-                        if (isValidSpawnLocation(x, y)) {
-                            Slime slime = new Slime(x, y);
-                            slimes.add(slime);
-                            System.out.println("DEBUG: Slime spawned successfully at (" + x + "," + y + ") after " + spawnAttempts + " attempts");
-                            return slime;
-                        }
-                    }
-                }
-                System.out.println("DEBUG: Max spawn attempts reached, could not find valid location");
-                return null;
+            if (isValidSpawnLocation(x, y)) {
+                Slime slime = new Slime(x, y);
+                slimes.add(slime);
+                System.out.println("DEBUG: Slime spawned successfully at (" + x + "," + y + ")");
+                return slime;
             }
-        } while (!isValidSpawnLocation(x, y));
+        }
 
-        Slime slime = new Slime(x, y);
-        slimes.add(slime);
-        System.out.println("DEBUG: Slime spawned successfully at (" + x + "," + y + ")");
-        return slime;
+        // If we failed with random spawning, use a grid-based approach
+        System.out.println("DEBUG: Using grid-based fallback spawning");
+
+        // Try a more structured approach by scanning the map in a grid pattern
+        int gridStep = TILE_SIZE * 2; // Look at every second tile for efficiency
+
+        for (int gridX = safeMargin; gridX < (WORLD_WIDTH_TILES * TILE_SIZE) - safeMargin; gridX += gridStep) {
+            for (int gridY = safeMargin; gridY < (WORLD_HEIGHT_TILES * TILE_SIZE) - safeMargin; gridY += gridStep) {
+                // Add some randomness to the grid positions
+                x = gridX + random.nextInt(TILE_SIZE);
+                y = gridY + random.nextInt(TILE_SIZE);
+
+                if (isValidSpawnLocation(x, y)) {
+                    Slime slime = new Slime(x, y);
+                    slimes.add(slime);
+                    System.out.println("DEBUG: Slime spawned successfully using grid method at (" + x + "," + y + ")");
+                    return slime;
+                }
+            }
+        }
+
+        System.out.println("DEBUG: Failed to spawn slime after exhaustive search");
+        return null;
     }
 
-    private boolean isNearPlayer(int x, int y) {
+    private boolean isValidSpawnLocation(int x, int y) {
         Player player = gamePanel.player;
         float playerX = player.getX();
         float playerY = player.getY();
 
-        return Math.abs(x - playerX) < TILE_SIZE * 3 &&
-                Math.abs(y - playerY) < TILE_SIZE * 3;
+        // Check if inside map boundaries with margin
+        int margin = TILE_SIZE / 2;
+        int mapWidth = WORLD_WIDTH_TILES * TILE_SIZE;
+        int mapHeight = WORLD_HEIGHT_TILES * TILE_SIZE;
+        if (x < margin || x >= (mapWidth - margin) || y < margin || y >= (mapHeight - margin)) {
+            return false;
+        }
+
+        // Check distance from player
+        float distanceToPlayer = (float) Math.sqrt(
+                Math.pow(x - playerX, 2) +
+                        Math.pow(y - playerY, 2)
+        );
+
+        // Check if spawn is far enough from player
+        if (distanceToPlayer <= SPAWN_SAFE_DISTANCE) {
+            return false;
+        }
+
+        // Check if spawn point is on a non-collision tile
+        return !gamePanel.collisionChecker.checkTileAtLocation(x, y, TILE_SIZE, TILE_SIZE);
     }
 
     public void update() {
@@ -191,38 +218,41 @@ public class SlimeManager {
             // Update slime behavior
             updateSlimeBehavior(slime);
             slime.update();
+
+            // Keep slimes within bounds after movement
+            keepSlimeInBounds(slime);
+        }
+    }
+
+    // New method to keep slimes within the map boundaries
+    private void keepSlimeInBounds(Slime slime) {
+        int mapWidth = WORLD_WIDTH_TILES * TILE_SIZE;
+        int mapHeight = WORLD_HEIGHT_TILES * TILE_SIZE;
+        int margin = 5; // Small margin to prevent getting exactly on the edge
+
+        float x = slime.getX();
+        float y = slime.getY();
+
+        // Calculate bounds accounting for slime size
+        int slimeWidth = slime.getWidth();
+        int slimeHeight = slime.getHeight();
+
+        // Apply boundary restrictions
+        if (x < margin) {
+            slime.setX(margin);
+        } else if (x + slimeWidth >= mapWidth - margin) {
+            slime.setX(mapWidth - slimeWidth - margin);
+        }
+
+        if (y < margin) {
+            slime.setY(margin);
+        } else if (y + slimeHeight >= mapHeight - margin) {
+            slime.setY(mapHeight - slimeHeight - margin);
         }
     }
 
     public List<Slime> getSlimes() {
         return slimes;
-    }
-
-    private boolean isValidSpawnLocation(int x, int y) {
-        Player player = gamePanel.player;
-        float playerX = player.getX();
-        float playerY = player.getY();
-
-        // Check distance from player
-        float distanceToPlayer = (float) Math.sqrt(
-                Math.pow(x - playerX, 2) +
-                        Math.pow(y - playerY, 2)
-        );
-
-        // Check if spawn is far enough from player
-        if (distanceToPlayer <= SPAWN_SAFE_DISTANCE) {
-            return false;
-        }
-
-        // Check if spawn point is within map boundaries
-        int mapWidth = WORLD_WIDTH_TILES * TILE_SIZE;
-        int mapHeight = WORLD_HEIGHT_TILES * TILE_SIZE;
-        if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
-            return false;
-        }
-
-        // Check if spawn point is on a non-collision tile
-        return !gamePanel.collisionChecker.checkTileAtLocation(x, y, TILE_SIZE, TILE_SIZE);
     }
 
     public void render(Graphics g, int cameraX, int cameraY) {
@@ -370,6 +400,16 @@ public class SlimeManager {
 
     // Getter to check if waves are complete
     public boolean areWavesComplete() {
-        return currentWave > WAVE_SLIME_COUNTS.length;
+        boolean completed = currentWave >= WAVE_SLIME_COUNTS.length && !waveActive && killedSlimesInWave >= totalSlimesInWave;
+
+        if (completed) {
+            System.out.println("DEBUG: Waves completed - currentWave: " + currentWave +
+                    ", totalWaves: " + WAVE_SLIME_COUNTS.length +
+                    ", waveActive: " + waveActive +
+                    ", killedSlimes: " + killedSlimesInWave +
+                    ", totalSlimes: " + totalSlimesInWave);
+        }
+
+        return completed;
     }
 }
