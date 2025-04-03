@@ -124,12 +124,6 @@ public class GamePanel extends JPanel {
     public void setPaused(boolean pauseState) {
         this.paused = pauseState;
 
-        // Optional: Add pause sound effect or visual indicator
-        if (paused) {
-            sound.stop(); // Optionally pause background music
-        } else {
-            playMusic(3); // Resume background music
-        }
     }
 
     public void restartGame() {
