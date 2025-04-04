@@ -5,10 +5,7 @@ import org.example.GamePanel;
 import javax.imageio.ImageIO;
 import java.io.IOException;
 
-/**
- * Factory class responsible for creating game objects
- * Centralizes object creation logic in one place
- */
+
 public class ObjectFactory {
     private GamePanel gp;
 

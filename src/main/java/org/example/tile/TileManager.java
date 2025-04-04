@@ -169,10 +169,4 @@ public class TileManager {
             }
         }
     }
-
-    // Original draw method (kept for reference)
-    public void draw(Graphics g) {
-        draw(g, 0, 0);
-    }
-
 }
