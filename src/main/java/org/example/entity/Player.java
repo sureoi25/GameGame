@@ -25,7 +25,6 @@ public class Player extends Entity {
     public final int screenX; // Screen center position
     public final int screenY;
     private GamePanel gp;
-    private int objectIndex = 999;
     private SuperObject inventory[] = new SuperObject[50];
     private int inventorySize = 0;
     private boolean hasKey = false;

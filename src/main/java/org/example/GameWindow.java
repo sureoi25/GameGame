@@ -64,7 +64,7 @@ public class GameWindow {
             // Draw game title
             g2d.setFont(new Font("Arial", Font.BOLD, 60));
             g2d.setColor(Color.WHITE);
-            String gameTitle = "THE CUMBACK";
+            String gameTitle = "THE COMEBACK";
             int titleWidth = g2d.getFontMetrics().stringWidth(gameTitle);
             g2d.drawString(gameTitle, (PANEL_WIDTH - titleWidth) / 2, PANEL_HEIGHT / 3);
 
