@@ -110,18 +110,6 @@ public abstract class Entity {
         return hitboxHeight;
     }
 
-    public void setHitbox(int width, int height, int offsetX, int offsetY) {
-        this.hitboxWidth = width;
-        this.hitboxHeight = height;
-        this.hitboxOffsetX = offsetX;
-        this.hitboxOffsetY = offsetY;
-
-        // Update solidArea when hitbox changes
-        this.solidAreaDefaultX = offsetX;
-        this.solidAreaDefaultY = offsetY;
-        this.solidArea.width = width;
-        this.solidArea.height = height;
-    }
 
     // Get next position based on direction for collision checking
     public float getNextHitboxX() {
@@ -137,15 +125,6 @@ public abstract class Entity {
         else if (entityDirection == 3) nextY += speed; // DOWN
         return nextY;
     }
-
-    // Basic getters and setters
-    public void setPosition(float x, float y) {
-        this.x = x;
-        this.y = y;
-    }
-
-    public float getOldX() { return oldX; }
-    public float getOldY() { return oldY; }
 
     public void setDirection(int direction) {
         this.entityDirection = direction;
@@ -163,7 +142,6 @@ public abstract class Entity {
     public void setSpeed(float speed) { this.speed = speed; }
 
     public void setCollisionDetected(boolean collision) { this.collisionDetected = collision; }
-    public boolean isCollisionDetected() { return collisionDetected; }
 
     public void attack() {
         if (!attacking && attackCooldown <= 0) {
@@ -217,17 +195,6 @@ public abstract class Entity {
         }
     }
 
-    public void attackEntity(Entity target) {
-        if (attacking && alive) {
-            float xDistance = Math.abs(this.getHitboxX() - target.getHitboxX());
-            float yDistance = Math.abs(this.getHitboxY() - target.getHitboxY());
-            float attackRange = width;
-
-            if (xDistance < attackRange && yDistance < attackRange) {
-                target.takeDamage(attackDamage);
-            }
-        }
-    }
 
     // Combat getters and setters
     public int getCurrentHp() { return currentHp; }
@@ -235,8 +202,6 @@ public abstract class Entity {
     public int getAttackDamage() { return attackDamage; }
     public float getSpeed() { return speed; }
     public boolean isAttacking() { return attacking; }
-    public void setAttackDamage(int attackDamage) { this.attackDamage = attackDamage; }
     public boolean isAlive() { return alive; }
-    public void setAlive(boolean alive) { this.alive = alive; }
-    public boolean isInvulnerable() { return invulnerable; }
+
 }

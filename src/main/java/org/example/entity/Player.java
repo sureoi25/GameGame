@@ -20,9 +20,9 @@ public class Player extends Entity {
     private int lastNonAttackDirection = DOWN;
     private int attackTick = 0;
     private int attackCooldown = 30;
-    public int worldX;    // Current position in world coordinates
+    public int worldX;
     public int worldY;
-    public final int screenX; // Screen center position
+    public final int screenX;
     public final int screenY;
     private GamePanel gp;
     private SuperObject inventory[] = new SuperObject[50];
@@ -31,7 +31,6 @@ public class Player extends Entity {
     private Random random = new Random();
     private int nearbyObjectIndex = 999;
     private boolean dead = false;
-
 
     public Player(float x, float y, int width, int height, GamePanel gp) {
         super(x, y, width, height);
@@ -62,7 +61,7 @@ public class Player extends Entity {
         this.setSpeed(2.0f);
 
         // Initialize player stats
-        initStats(100, 10); // Example values: 100 HP, 10 attack damage
+        initStats(100, 10);
     }
 
     @Override
@@ -76,9 +75,6 @@ public class Player extends Entity {
         if (!tileCollision) {
             // Only check object collision if no tile collision was detected
             nearbyObjectIndex = gp.collisionChecker.checkObject(this, true);
-
-            // We no longer directly interact here
-            // The interaction will happen when 'E' is pressed
         }
 
         // Only update position if no collisions detected
@@ -96,9 +92,7 @@ public class Player extends Entity {
         setAnimation();
     }
 
-    // Add this new method to handle interactions when 'E' is pressed
     public void interact() {
-        // Only interact if there's a nearby object
         if (nearbyObjectIndex != 999) {
             interactWithObject(nearbyObjectIndex);
         }
@@ -110,19 +104,17 @@ public class Player extends Entity {
 
             switch (objectName) {
                 case "Key":
-                    // Add key to inventory
                     addToInventory(gp.obj[index]);
                     hasKey = true;
                     gp.playSE(5);
-                    gp.obj[index] = null; // Remove from map after picking up
+                    gp.obj[index] = null;
                     break;
 
                 case "chest":
-                    // Only open if player has a key
                     if (hasKey) {
                         gp.playSE(5);
                         openChest(index);
-                        removeKey(); // Consume key
+                        removeKey();
                     } else {
                         System.out.println("You need a key to open this chest!");
                     }
@@ -131,17 +123,17 @@ public class Player extends Entity {
                 case "chicken":
                     heal(20);
                     gp.playSE(4);
-                    gp.obj[index] = null; // Remove after use
+                    gp.obj[index] = null;
                     break;
                 case "blue mushroom":
                     increaseSpeed(0.5f);
                     gp.playSE(6);
-                    gp.obj[index] = null; // Remove after use
+                    gp.obj[index] = null;
                     break;
                 case "red mushroom":
                     increaseHP(10);
                     gp.playSE(6);
-                    gp.obj[index] = null; // Remove after use
+                    gp.obj[index] = null;
                     break;
                 case "pork":
                     increaseDamage(10);
@@ -149,7 +141,6 @@ public class Player extends Entity {
                     gp.obj[index] = null;
                     break;
                 default:
-                    // Handle generic object collision
                     if (gp.obj[index].collision) {
                         collisionDetected = true;
                     }
@@ -158,7 +149,6 @@ public class Player extends Entity {
         }
     }
 
-    // Add an object to player's inventory
     private void addToInventory(SuperObject obj) {
         if (inventorySize < inventory.length) {
             inventory[inventorySize] = obj;
@@ -169,7 +159,6 @@ public class Player extends Entity {
         }
     }
 
-    // Remove a key from inventory after use
     private void removeKey() {
         boolean keyRemoved = false;
         for (int i = 0; i < inventorySize; i++) {
@@ -185,14 +174,12 @@ public class Player extends Entity {
             }
         }
 
-        // Update key status
         if (keyRemoved) {
             System.out.println("Used a key to open the chest!");
             hasKey = hasKeyInInventory();
         }
     }
 
-    // Check if player still has any keys in inventory
     private boolean hasKeyInInventory() {
         for (int i = 0; i < inventorySize; i++) {
             if (inventory[i] != null && inventory[i].name.equals("Key")) {
@@ -202,33 +189,20 @@ public class Player extends Entity {
         return false;
     }
 
-    // Open chest and spawn a random item
     private void openChest(int chestIndex) {
-        // Define possible loot items (excluding key and chest)
         String[] possibleItems = {"chicken", "blue mushroom", "red mushroom", "pork"};
-
-        // Generate random item
         int randomIndex = random.nextInt(possibleItems.length);
         String randomItem = possibleItems[randomIndex];
 
-        // Get chest position before removing it
         int itemX = gp.obj[chestIndex].worldX;
         int itemY = gp.obj[chestIndex].worldY;
 
-        // Debug output
-        System.out.println("Opening chest at position: " + itemX + "," + itemY);
-        System.out.println("Selected random item: " + randomItem);
-
-        // Remove chest
         gp.obj[chestIndex] = null;
 
-        // Use the ObjectFactory to create the new item
         SuperObject newItem = gp.objectFactory.createObject(randomItem, itemX, itemY);
 
-        // Validate the new item
         if (newItem == null) {
             System.err.println("ERROR: Failed to create item: " + randomItem);
-            // Create a fallback item if possible
             newItem = gp.objectFactory.createObject("Key", itemX, itemY);
             if (newItem == null) {
                 System.err.println("ERROR: Failed to create fallback item. Chest will remain empty.");
@@ -236,19 +210,11 @@ public class Player extends Entity {
             }
         }
 
-        // Ensure the new item has proper coordinates and image
         newItem.worldX = itemX;
         newItem.worldY = itemY;
-
-        // Make sure the item has collision set appropriately (usually false for pickups)
         newItem.collision = false;
-
-        // Place new item in the world (in the same slot as the chest)
         gp.obj[chestIndex] = newItem;
-
-        System.out.println("Successfully spawned " + randomItem + " at position: " + itemX + "," + itemY);
     }
-
 
     public void render(Graphics g, int cameraX, int cameraY) {
         BufferedImage currentFrame = animations[state][aniIndex];
@@ -271,11 +237,9 @@ public class Player extends Entity {
     @Override
     protected void updatePosition() {
         if (moving && !attacking) {
-            // Save old position before moving
             oldX = x;
             oldY = y;
 
-            // Only move if no collision detected
             if (!collisionDetected) {
                 switch (entityDirection) {
                     case LEFT: x -= speed; break;
@@ -284,7 +248,6 @@ public class Player extends Entity {
                     case DOWN: y += speed; break;
                 }
 
-                // Update world coordinates
                 worldX = (int)x;
                 worldY = (int)y;
             }
@@ -297,8 +260,6 @@ public class Player extends Entity {
             this.entityDirection = direction;
             this.lastNonAttackDirection = direction;
             this.moving = true;
-
-            // Save old position when changing direction
             oldX = x;
             oldY = y;
         }
@@ -308,7 +269,6 @@ public class Player extends Entity {
         if (!attacking) {
             attacking = true;
             attackTick = 0;
-
         }
     }
 
@@ -323,7 +283,7 @@ public class Player extends Entity {
             }
         }
 
-        super.updateCooldowns(); // Call parent method for invulnerability timer
+        super.updateCooldowns();
     }
 
     @Override
@@ -389,6 +349,7 @@ public class Player extends Entity {
             }
         }
     }
+
     public boolean isDead() {
         return dead;
     }
@@ -397,62 +358,49 @@ public class Player extends Entity {
     protected void die() {
         super.die();
         this.dead = true;
-
         gp.sound.stop();
         gp.playSE(8);
-
         state = DEATH;
         aniIndex = 0;
         aniTick = 0;
         moving = false;
     }
+
     public void restart() {
-        // Reset player state
-        this.currentHp = 100; // Default max health
+        this.currentHp = 100;
         this.dead = false;
         this.state = IDLE_DOWN;
-        this.x = 288; // Default spawn point
+        this.x = 288;
         this.y = 96;
         this.worldX = (int)x;
         this.worldY = (int)y;
         this.alive = true;
-
     }
+
     public void takeDamage(int damage) {
         gp.playSE(2);
         if (!invulnerable && alive) {
-            System.out.println("Player taking damage: " + damage);
-            System.out.println("Current HP before damage: " + currentHp);
-
             currentHp -= damage;
-
-            System.out.println("Current HP after damage: " + currentHp);
 
             if (currentHp <= 0) {
                 currentHp = 0;
-                System.out.println("Player died!");
                 die();
             }
 
             invulnerable = true;
             invulnerabilityTime = 0;
-
-            System.out.println("Player is now invulnerable for a short time");
-        } else if (invulnerable) {
-            System.out.println("Player is currently invulnerable");
         }
     }
+
     public void attackNearbyEntities(SlimeManager slimeManager) {
         gp.playSE(7);
         for (Slime slime : slimeManager.getSlimes()) {
-            // Check if slime is within attack range
             float xDistance = Math.abs(this.getHitboxX() - slime.getHitboxX());
             float yDistance = Math.abs(this.getHitboxY() - slime.getHitboxY());
-            float attackRange = width; // Adjust as needed
+            float attackRange = width;
 
             if (xDistance < attackRange && yDistance < attackRange && attacking) {
                 slime.takeDamage(this.attackDamage);
-                System.out.println("Player attacked slime! Damage: " + this.attackDamage);
             }
         }
     }
