@@ -41,6 +41,9 @@ public class SlimeManager {
         this.gamePanel = gamePanel;
         this.slimes = new ArrayList<>();
         this.random = new Random();
+        this.currentWave = 0;
+        this.killedSlimesInWave = 0;
+        this.totalSlimesInWave = 0;
 
         // Get world dimensions from GamePanel
         this.WORLD_WIDTH_TILES = gamePanel.WORLD_WIDTH_TILES;
