@@ -8,13 +8,12 @@ import org.example.entity.Player;
 import org.example.inputs.KeyBoardInputs;
 import org.example.inputs.MouseInputs;
 import org.example.tile.TileManager;
-import org.example.HUD; // Import the new HUD class
+import org.example.HUD;
 
 import javax.swing.JPanel;
 import java.awt.*;
 
 public class GamePanel extends JPanel {
-    private MouseInputs mouseInputs;
     public Player player;
     public TileManager tileManager;
     public CollisionChecker collisionChecker;
@@ -65,10 +64,10 @@ public class GamePanel extends JPanel {
     }
 
     private void setupInputs() {
-        mouseInputs = new MouseInputs(this);
+
         addKeyListener(new KeyBoardInputs(this));
-        addMouseListener(mouseInputs);
-        addMouseMotionListener(mouseInputs);
+        addMouseListener(new MouseInputs(this));
+        addMouseMotionListener(new MouseInputs(this));
         setFocusable(true);
     }
 
