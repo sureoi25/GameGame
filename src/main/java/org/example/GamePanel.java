@@ -137,6 +137,7 @@ public class GamePanel extends JPanel {
             gameCompleted = false;
             // Respawn objects
             setupRestart();
+            hud = new HUD(this,player, slimeManager);
 
             // Ensure game is unpaused
             paused = false;
