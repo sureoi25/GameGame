@@ -367,7 +367,8 @@ public class Player extends Entity {
     }
 
     public void restart() {
-        this.currentHp = 100;
+        this.initStats(100,10);
+        this.setSpeed(2.0f);
         this.dead = false;
         this.state = IDLE_DOWN;
         this.x = 288;
