@@ -31,6 +31,8 @@ public class Player extends Entity {
     private Random random = new Random();
     private int nearbyObjectIndex = 999;
     private boolean dead = false;
+    private boolean attackSoundPlayed = false;
+    private boolean damageAppliedThisAttack = false;
 
     public Player(float x, float y, int width, int height, GamePanel gp) {
         super(x, y, width, height);
@@ -108,6 +110,7 @@ public class Player extends Entity {
                     hasKey = true;
                     gp.playSE(5);
                     gp.obj[index] = null;
+                    collisionDetected = false; // Ensure no collision after pickup
                     break;
 
                 case "chest":
@@ -115,8 +118,12 @@ public class Player extends Entity {
                         gp.playSE(5);
                         openChest(index);
                         removeKey();
+                        collisionDetected = false; // Ensure no collision after opening
                     } else {
                         System.out.println("You need a key to open this chest!");
+                        if (gp.obj[index].collision) {
+                            collisionDetected = true;
+                        }
                     }
                     break;
 
@@ -124,25 +131,31 @@ public class Player extends Entity {
                     heal(20);
                     gp.playSE(4);
                     gp.obj[index] = null;
+                    collisionDetected = false;
                     break;
                 case "blue mushroom":
                     increaseSpeed(0.5f);
                     gp.playSE(6);
                     gp.obj[index] = null;
+                    collisionDetected = false;
                     break;
                 case "red mushroom":
                     increaseHP(10);
                     gp.playSE(6);
                     gp.obj[index] = null;
+                    collisionDetected = false;
                     break;
                 case "pork":
                     increaseDamage(10);
                     gp.playSE(4);
                     gp.obj[index] = null;
+                    collisionDetected = false;
                     break;
                 default:
                     if (gp.obj[index].collision) {
                         collisionDetected = true;
+                    } else {
+                        collisionDetected = false;
                     }
                     break;
             }
@@ -280,9 +293,13 @@ public class Player extends Entity {
                 attacking = false;
                 attackTick = 0;
                 entityDirection = lastNonAttackDirection;
+                attackSoundPlayed = false; // Reset sound for next attack
+                damageAppliedThisAttack = false; // Reset damage for next attack
             }
+        } else {
+            attackSoundPlayed = false; // Reset if attack is interrupted
+            damageAppliedThisAttack = false;
         }
-
         super.updateCooldowns();
     }
 
@@ -394,15 +411,30 @@ public class Player extends Entity {
     }
 
     public void attackNearbyEntities(SlimeManager slimeManager) {
-        gp.playSE(7);
+        if (!attackSoundPlayed) {
+            gp.playSE(7);
+            attackSoundPlayed = true;
+        }
+        if (damageAppliedThisAttack) return;
+        int cameraX = gp.getCameraX();
+        int cameraY = gp.getCameraY();
+        int screenWidth = gp.PANEL_WIDTH;
+        int screenHeight = gp.PANEL_HEIGHT;
         for (Slime slime : slimeManager.getSlimes()) {
+            float slimeX = slime.getX();
+            float slimeY = slime.getY();
+            // Only check slimes that are on screen
+            if (slimeX + slime.getWidth() < cameraX || slimeX > cameraX + screenWidth ||
+                slimeY + slime.getHeight() < cameraY || slimeY > cameraY + screenHeight) {
+                continue;
+            }
             float xDistance = Math.abs(this.getHitboxX() - slime.getHitboxX());
             float yDistance = Math.abs(this.getHitboxY() - slime.getHitboxY());
             float attackRange = width;
-
             if (xDistance < attackRange && yDistance < attackRange && attacking) {
                 slime.takeDamage(this.attackDamage);
             }
         }
+        damageAppliedThisAttack = true;
     }
 }

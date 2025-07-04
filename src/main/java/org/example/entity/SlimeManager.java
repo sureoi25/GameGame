@@ -198,6 +198,15 @@ public class SlimeManager {
             startNextWave();
         }
 
+        // Get camera and screen info for culling
+        int cameraX = gamePanel.getCameraX();
+        int cameraY = gamePanel.getCameraY();
+        int screenWidth = gamePanel.PANEL_WIDTH;
+        int screenHeight = gamePanel.PANEL_HEIGHT;
+        float playerX = gamePanel.player.getX();
+        float playerY = gamePanel.player.getY();
+        float cullRadius = 1.5f * screenWidth; // Update slimes within 1.5x screen width of player
+
         // Update existing slimes
         Iterator<Slime> iterator = slimes.iterator();
         while (iterator.hasNext()) {
@@ -218,11 +227,17 @@ public class SlimeManager {
                 continue;
             }
 
-            // Update slime behavior
-            updateSlimeBehavior(slime);
-            slime.update();
-
-            // Keep slimes within bounds after movement
+            // Only update slimes that are on screen or near the player
+            float slimeX = slime.getX();
+            float slimeY = slime.getY();
+            boolean onScreen = !(slimeX + slime.getWidth() < cameraX || slimeX > cameraX + screenWidth ||
+                                 slimeY + slime.getHeight() < cameraY || slimeY > cameraY + screenHeight);
+            float distToPlayer = (float)Math.hypot(slimeX - playerX, slimeY - playerY);
+            if (onScreen || distToPlayer < cullRadius) {
+                updateSlimeBehavior(slime);
+                slime.update();
+            }
+            // Always keep slimes within bounds after movement
             keepSlimeInBounds(slime);
         }
     }

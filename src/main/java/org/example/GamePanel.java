@@ -250,6 +250,7 @@ public class GamePanel extends JPanel {
     // Audio methods
     public void playMusic(int i) {
         if (!player.isDead()) {
+            stopMusic(); // Stop any currently playing music before starting new
             sound.setFile(i);
             sound.play();
             sound.loop();
